@@ -78,7 +78,15 @@ def kandinsky():
     r.raise_for_status()
     task = r.json()
     task_id = task["uuid"]
+ # иногда Kandinsky возвращает пустое тело → пробуем текст
+    try:
+        task = r.json()
+    except Exception:
+        return jsonify({"error": "Bad response from Kandinsky", "text": r.text}), 500
 
+    task_id = task.get("uuid")
+    if not task_id:
+        return jsonify({"error": "No task id", "response": task}), 500
     # Ждём результат
     for _ in range(20):  # до 20 попыток по 3 сек
         time.sleep(3)
@@ -93,4 +101,5 @@ def kandinsky():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+
 
