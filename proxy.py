@@ -97,9 +97,31 @@ def kandinsky():
         if data["status"] == "DONE":
             return jsonify(data["result"]["files"])  # base64 картинка
     return jsonify({"error": "Timeout waiting for result"}), 504
+# папка для файлов
+UPLOAD_FOLDER = "files"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+@app.route("/generate", methods=["POST"])
+def generate():
+    data = request.json
+    img_b64 = data.get("image")
+    if not img_b64:
+        return jsonify({"error": "no image"}), 400
+    img_bytes = base64.b64decode(img_b64)
+    filename = f"{uuid.uuid4()}.png"
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    with open(filepath, "wb") as f:
+        f.write(img_bytes)
+    file_url = f"{request.host_url}files/{filename}"
+    return jsonify({"url": file_url})
+
+@app.route("/files/<path:filename>")
+def files(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename, mimetype="image/png")
 
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+
 
 
